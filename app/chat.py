@@ -2,43 +2,65 @@ from app.client import client
 from app.storage import load_history
 from app.config import MODEL_NAME
 
-messages = [
-    {
-        "role": "system",
-        "content": "You are a helpful assistant."
-    }
-]
-
-messages.extend(load_history())
-
-# 核心函数：聊天入口
-def chat_stream(user_input):
+class ChatEngine:
     
-    global messages
+    def __init__(self):
+        
+        self.messages = [
+            {
+                "role": "system",
+                "content": "You are a helpful assistant."
+            }
+        ]
+        
+        self.messages.extend(load_history())
+        
+    def chat_stream(self, user_input):
     
-    messages.append({
-        "role":"user",
-        "content": user_input    
-    })
+        self.messages.append({
+            "role": "user",
+            "content": user_input
+         })
     
-    stream = client.chat.completions.create(
-        model = MODEL_NAME,
-        messages = messages,
-        stream = True
-    )
+        stream = client.chat.completions.create(
+            model = MODEL_NAME,
+            messages = self.messages,
+            stream = True
+        )
     
-    ai_reply = ""
+        ai_reply = ""
     
-    for chunk in stream:
-        delta = chunk.choices[0].delta.content
-        if delta:
-            print(delta, end="", flush=True)
-            ai_reply += delta
-    print
+        for chunk in stream:
+            delta = chunk.choices[0].delta.content
+            if delta:
+               ai_reply += delta
+                
     
-    messages.append({
-        "role": "assistant",
-        "content": ai_reply
-    })
+        self.messages.append(
+            {
+                "role": "assistant",
+                "content": ai_reply
+            }
+        )
+        return ai_reply
     
-    return ai_reply
+    def reset(self):
+        self.messages = [
+            {
+                "role":"system",
+                "content": "You are a helpful assistant."
+            }
+        ]
+        
+    def history(self):
+        result = ""
+        
+        for msg in self.messages:
+            
+            role = msg["role"]
+            content = msg["content"]
+            
+            result += f"{role}: \n{content} \n\n"
+        
+        return result    
+    

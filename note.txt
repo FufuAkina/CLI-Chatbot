@@ -69,9 +69,16 @@ client.py(API连接层): 管”怎么连接模型“， 用户端。
 storage.py： 只管读写文件， load_history和save_history
 main.py(放源代码)：入口+CLI ，把其他文件连接起来
  !!! chat_history.json为空时要打一个[]
-2. 拆分main.py： 
+2. 拆分main.py： 分成逻辑层和交互层
 拆出一个chat.py(logic):负责AI聊天逻辑：初始化messages(system prompt),  核心chat_stream(调用API发送请求，记录reply，返回回答传给main.py)
 剩下main.py(control):只负责交互(input/output)
+3. Chat Engine(class重构化):不再使用global messages(状态是散的，不好扩展，不好测试)，封装成class。
+ChatEngine 相当于AI的大脑（class=对象模型(・∀・(・∀・(・∀・*)）
+4.工程升级，变成mini DEEPSEEK engine:
+加reset和history两个功能
+从engine中分离print, 提高扩展性: chat.py是逻辑层，逻辑中写了print会写死，以后不好扩展
+
+理论补充：1.python相关:class, self(class = “对象的模板 / 蓝图”?  self = "当前对象的数据空间") class适合管理有状态的对象…
 
 
 
