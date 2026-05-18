@@ -1,0 +1,13 @@
+环境配置：创建文件夹、VSCode配置python、进入虚拟环境
+               (※).env文件存储 API KEY
+                    .gitignore: env(敏感配置文件) venv/（虚拟环境文件夹）__pycache__/(python缓存) # system(系统文件)
+
+虚拟环境配置：1.第一批核心库 pip install openai python-dotenv rich
+              2.pip install openai:OpenAI Client，HTTP请求封装，JSON解析，错误处理…
+
+
+main.py: 1. 从.env文件中读取环境变量，在python中使用它(用load_dotenv和os库读取)
+             Q1.os.getenv() 背后原理:
+             Python 的环境变量是进程级的，启动时由操作系统注入。os.getenv() 实际是访问 os.environ 这个字典，本质是 O(1) 哈希查找。
+           2.真正接入DEEPSEEK: 第一次调用API，用OpenAI SDK兼容DEEPSEEK，发送一个"你好"请求，然后打印回复。
+           ·API调用，环境变量管理，SDK使用，对话结构(client,response)
