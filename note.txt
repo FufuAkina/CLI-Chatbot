@@ -1,3 +1,4 @@
+1.0  调用API
 环境配置：创建文件夹、VSCode配置python、进入虚拟环境
                (※).env文件存储 API KEY
                     .gitignore: env(敏感配置文件) venv/（虚拟环境文件夹）__pycache__/(python缓存) # system(系统文件)
@@ -11,3 +12,27 @@ main.py: 1. 从.env文件中读取环境变量，在python中使用它(用load_d
              Python 的环境变量是进程级的，启动时由操作系统注入。os.getenv() 实际是访问 os.environ 这个字典，本质是 O(1) 哈希查找。
            2.真正接入DEEPSEEK: 第一次调用API，用OpenAI SDK兼容DEEPSEEK，发送一个"你好"请求，然后打印回复。
            ·API调用，环境变量管理，SDK使用，对话结构(client,response)
+
+理论补充:
+  1. HTTP/ API : MDN HTTP Overview
+(HTTP是什么，client/server,   requests, response,  GET/POST, headers, status code, streaming理解) ,
+API KEY, HTTP与API调用关系。
+视频：HTTP Crash Course & Exploration (Traversy Media)
+2. Andrej Karpathy - Intro to LLMs
+3. JSON
+4. Openai SDK
+5. 基础messages
+
+
+2.0 多轮对话CLI
+main.py : 1. 实现多轮一问一答： while True 多次发送response请求 （but此时只是一问一答，chatbot并没有真正的记忆）
+     2. 使模型会记忆：实际是把每次的对话都重新发送给大模型。用message， append每次用户输入和模型回答。
+      每次发送请求时messages附带了之前所有聊天记录。
+
+理论补充：
+1. OpenAI Text Generaton Guide: messages,roles,   streaming
+2. 	OpenAI Prompt Engineering Guide: （messagaes, role, prompt, few-shot, structed output） 
+阅读Instructions, Provide reference text , Split complex tasks, Give the model time to think/////  
+Messages&Roles →Write clear instructions&Provide reference text→Few-shot prompting(※)
+3. 视频: 
+Official ChatGPT Prompt Engineering Guide From OpenAI
