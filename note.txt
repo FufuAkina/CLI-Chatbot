@@ -55,7 +55,23 @@ main.py: 1.逐token输出：加上stream(一个数据流对象，在不断的迭
 6. LLM API的本质： OpenAI Chat Completions Guide
 7.Conversaation memory: stateless/stateful, context management, truncation strategy.
 .python相关： os库(os.path.exists)；open(文件名， 读取模式，encoding):r读取，w写入；  json库；
- 
+
+V4 工程化改造：项目结构，模块拆分，配置管理
+环境:
+
+main.py：两个文件夹app(放代码)和data(管理数据)
+1.分层：app中创建python文件:main.py,config.py,client.py,
+storage.py;   将chat_history.json 移进 data文件夹
+        app中再创建一个空文件init.py 告诉app是一个package
+功能分模块:
+config.py(配置层): 放置不会变的东西,如APIKEY, BASE_URL, MODEL, HISTORY_FILE
+client.py(API连接层): 管”怎么连接模型“， 用户端。
+storage.py： 只管读写文件， load_history和save_history
+main.py(放源代码)：入口+CLI ，把其他文件连接起来
+ !!! chat_history.json为空时要打一个[]
+2. 拆分main.py： 
+拆出一个chat.py(logic):负责AI聊天逻辑：初始化messages(system prompt),  核心chat_stream(调用API发送请求，记录reply，返回回答传给main.py)
+剩下main.py(control):只负责交互(input/output)
 
 
 
