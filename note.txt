@@ -36,3 +36,35 @@ main.py : 1. 实现多轮一问一答： while True 多次发送response请求 �
 Messages&Roles →Write clear instructions&Provide reference text→Few-shot prompting(※)
 3. 视频: 
 Official ChatGPT Prompt Engineering Guide From OpenAI
+
+
+
+3.0 添加streaming: 逐token输出
+main.py: 1.逐token输出：加上stream(一个数据流对象，在不断的迭代) , chunk(一小块返回数据), delta(变化量，最新的回答)
+2. 一些小优化：加入 System Prompt和简单的上下文长度控制机制(更高级的方案:summary memory/ vector memory)
+加一些CLI commands: 输入""  "exit"  "/reset, 加错误处理try+优化streaming输出
+3. 查看历史功能： 新建一个JOSN文件:chat_history.json
+ 定义load_history(),save_history()两个函数，每次开始读取history，结束保存history(!!!system不要保存金history)
+
+理论补充： 1. OpenAI Streaming Responses Guide: 重点看stream=True , chunk ,delta, SSE
+2.OpenAI Conversation State Guide: 了解stateless conversation,重点看messages, conversation history, stateless
+3. Iterator/ Generator : Python Iterators Tutorial 只需理解一个对象不断产生数据？
+4.底层SSE: MDN  Server-Sent Events Guide
+       ※LLM更适合SSE， SSE VS WebSocket
+5.理解token: OpenAI Tokenizer Guide
+6. LLM API的本质： OpenAI Chat Completions Guide
+7.Conversaation memory: stateless/stateful, context management, truncation strategy.
+.python相关： os库(os.path.exists)；open(文件名， 读取模式，encoding):r读取，w写入；  json库；
+ 
+
+
+
+
+
+
+
+
+
+
+
+
