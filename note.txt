@@ -78,9 +78,20 @@ ChatEngine 相当于AI的大脑（class=对象模型(・∀・(・∀・(・∀�
 加reset和history两个功能
 从engine中分离print, 提高扩展性: chat.py是逻辑层，逻辑中写了print会写死，以后不好扩展
 
-理论补充：1.python相关:class, self(class = “对象的模板 / 蓝图”?  self = "当前对象的数据空间") class适合管理有状态的对象…
+理论补充：1.python相关:class, self(class = “对象的模板 / 蓝图”?  self = "当前对象的数据空间")
+                    class适合管理有状态的对象…
 
 
+V5 优化CLI体验:
+环境配置：新装库 pip install colorama
+1.错误处理（API/network/ratelimit）：try和except
+在chat.py导入openai包，有大模型的错误类型
+Retry+Backoff 细分错误类型: RateLimit, Timeout, Network Error, Unkown Error
+!!! chat_stream返回的不是一个generator,需要用yield返回delta
+2.CLI 命令系统优化：将if-else脚本，升级成mini shell
+创建app/commands：功能/reset, /history, /exit, /help
+3.CLI体验层升级：颜色系统， streaming逐词出现， UI格式统一(进一步:streaming UI优化) loading+error 提示优化
+！！！history中没有添加assistant回答，在chat.py的try最后的用finally保证一定append assistant的回答
 
 
 

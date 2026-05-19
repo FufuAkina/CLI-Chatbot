@@ -1,31 +1,45 @@
 from app.storage import save_history
 from app.chat import ChatEngine
+from app.commands import CommandHandler
+
+from colorama import  init, Fore, Style
+init(autoreset=True)
+
+import time
 
 engine = ChatEngine()
+cmd = CommandHandler(engine)
 
-while True:
+def print_user(text):
+    print(Fore.CYAN + "你： " + Style.RESET_ALL + text)
+
+def print_ai_start():
+    print(Fore.GREEN + "\n AI: ", end="", flush=True)
     
-    user_input = input("\n你: ")
+def print_system(text):
+    print(Fore.YELLOW + "[System]" + text)
     
-    if user_input == "exit":
-        break
+while cmd.running:
     
-    if user_input == "reset":
-        engine.reset()
-        print("OK! 已重置对话。(●ˇ∀ˇ●)")
+    user_input = input(Fore.CYAN + "\n你: ")
+    
+    result = cmd.handle(user_input)
+    
+    # 如果是命令（不是聊天）
+    if result != "chat":
         continue
     
-    if user_input == "history":
-        print(engine.history())
-        continue
+    print_ai_start()
     
-    print("\nAI: ", end="", flush=True)
+    try:
+        for char in engine.chat_stream(user_input):
+            print(char, end="", flush=True)
+            time.sleep(0.01)   # Streaming逐词出现
     
-    for char in engine.chat_stream(user_input):
-        print(char, end="", flush=True)
-    
-    ai_reply = engine.chat_stream(user_input)
-    
+    except KeyboardInterrupt:
+        print(Fore.RED + "\n[中断]")
+        
+    print()
     
     save_history(
         [m for m in engine.messages 
