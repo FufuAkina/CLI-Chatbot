@@ -44,6 +44,56 @@ web_chatbot/
 		↓
 	JSON Response
 3.HTML + JavaScript：实现前端调用后端
-导入新的库fastapi.response的FileResponse.
+·导入新的库fastapi.response的FileResponse.
 原本return{"message":"hello"}只是返回JSON，现在return 
 FileResponse("static/index.html")浏览器收到HTML后会渲染网页（网页=HTML文件）
+·在web_chatbot下创建static/index html：
+HTML网页结构 包括<input> <button> <div>   输入框/按键/一个区域…
+<input id="messageInput" type="text">
+<button onclick="sendMessage()">
+核心：异步函数async function send Message()：有input拿到输入框对象，input.value获取用户输入文字
+(※)fetch，向FastAPI发送HTTP请求
+实现请后端通信，一个完整的Web App小闭环：
+网页UI
+↓
+JavaScript
+↓
+HTTP POST
+↓
+FastAPI
+↓
+Python函数
+↓
+JSON
+↓
+更新网页
+4.将chatbot接入Web：理解工程分层的重要性
+可以将之前完成的app直接复制到web_chatbot下(逻辑层)
+修改main.py接入chatengine，可以在网页进行与AI的交流对话。
+
+V2：实现Streaming Web Chat
+1.修改FastAPI:在main.py中导入StreamingResponse,然后在app.post中修改返回方式，变为流式输出
+2.修改前端JavaScript: fetch().json()不行了，替换sendMessages():
+await response.json() -> response.body.getReader()
+从等待整个相应结束变成可读取的数据流+创建流读取器
+创建了读取器reader：await reader.read() 读取下一个chunk
+！！！出现messages污染，既要Streaming，又要结构正确：
+Session+ StreamingResponse
+！！！每次AI回复共用一个id： 修改前端，每次创建独立DOM
+！！！DOM 被 innerHTML 重建 + Stream 写入目标丢失：
+Streaming UI构建能力，避免React没有引入时DOM非响应式重建问题。*不用innerHTML 拼DOM:document.createElement()
+appendChild()     保证DOM不再重建，节点稳定
+*AI输出节点的固定引用const aiSpan = document.createElement("span") 保证stream写入目标稳定而且不会绑定丢失
+*使用textContent 追加stream
+
+
+
+
+
+
+
+
+
+
+
+

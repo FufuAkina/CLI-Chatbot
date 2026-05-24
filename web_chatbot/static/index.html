@@ -22,31 +22,61 @@
         async function sendMessage() {
 
             const input = document.getElementById("messageInput")
-
             const message = input.value
 
-            const response = await fetch("/chat", {
-                method: "POST",
+            if (!message) return   // 防止空输入
 
-                headers: {
-                    "Content-Type": "application/json"
-                },
-
-                body: JSON.stringify({
-                    message: message
-                })
-            })
-
-            const data = await response.json()
+            input.value = ""
 
             const chatBox = document.getElementById("chatBox")
 
-            chatBox.innerHTML += `
-                <p><b>你:</b> ${message}</p>
-                <p><b>AI:</b> ${data.reply}</p>
-            `
+            // =========================
+            // 1. 显示用户消息
+            // =========================
+            const userMsg = document.createElement("p")
+            userMsg.innerHTML = `<b>你:</b> ${message}`
+            chatBox.appendChild(userMsg)
 
-            input.value = ""
+            // =========================
+            // 2. 创建 AI 容器（纯 DOM，不用 innerHTML）
+            // =========================
+            const aiMsg = document.createElement("p")
+
+            const label = document.createElement("b")
+            label.textContent = "AI: "
+
+            const aiSpan = document.createElement("span")
+
+            aiMsg.appendChild(label)
+            aiMsg.appendChild(aiSpan)
+
+            chatBox.appendChild(aiMsg)
+
+            // =========================
+            // 3. 请求 stream
+            // =========================
+            const response = await fetch("/chat", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ message })
+            })
+
+            const reader = response.body.getReader()
+            const decoder = new TextDecoder()
+
+            // =========================
+            // 4. streaming 写入
+            // =========================
+            while (true) {
+
+                const { done, value } = await reader.read()
+                if (done) break
+
+                const chunk = decoder.decode(value)
+                aiSpan.textContent += chunk
+            }
         }
 
     </script>
