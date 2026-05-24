@@ -1,0 +1,49 @@
+Q:Engineering (PE) 到底是"工程"还是"玄学"？为什么差不多一段话，换一种写法，模型的回答质量能差很多？
+A: PE是工程，但是带一点“经验调参成分”的工程。
+它不像玄学的地方在于：有稳定可复现的结构(  system / user / context)， 有明确的优化目标(准确性、格式、风格、可控性), 有可测量方法(A/B test、 成功率、 token成本)；
+它看起来像玄学是因为模型不是规则系统而是概率系统。
+Prompt =  在高维概率空间里“引导模型走哪条路径”，Prompt改变注意力方向，输出空间约束，角色分布。
+
+Q:   除了换写法，还有哪些技巧能让模型更听话？
+
+Q: few-shot 示例、chain-of-thought、角色设定、结构化输出分别解决什么问题？你能自己整理出一套可复用的 PE 原则吗？试着让 AI 陪你把它写成一份 checklist。
+
+Q:Web 界面有哪些框架可以用？最轻的是一个 HTML 文件加 fetch，中间有 Gradio、Streamlit，重的有 Next.js、 Vue、 React。这些分别适合什么场景？
+
+Q:这些 Web 框架和 AI 开发的关系是什么？为什么做 AI 应用的人也要懂一点前端？
+
+Q:用户在浏览器里输入一句话，这句话怎么从浏览器一路送到 OpenAI 服务器，再把回复带回来？中间经过几跳？
+
+MVP: 最小可运行的Web Chat APP
+浏览器网页
+    ↓
+前端 UI (HTML/CSS/JS)
+    ↓ HTTP
+FastAPI 后端
+    ↓
+ChatEngine
+    ↓
+OpenAI API
+V1、Web基础+最小 FastAPI
+环境配置： 安装Web后端框架，最轻量的FastAPI: pip install fastapi uvicorn（FastAPI定义Web API ，例如@app.get("/")
+(Uvicorn负责启动HTTP Server)
+
+1.创建最小Web项目：
+web_chatbot/
+│
+├── main.py
+└── requirements.txt
+尝试一个简单的访问页面，返回hello world
+2.引入BaseModel(自动解析JSON语言)：
+打开自动文档http://127.0.0.1:9000/docs，FastAPI自动生成了API文档网页，有GET/POST功能
+实现了：浏览器
+		↓ HTTP POST
+	   FastAPI
+		↓
+	Python函数
+		↓
+	JSON Response
+3.HTML + JavaScript：实现前端调用后端
+导入新的库fastapi.response的FileResponse.
+原本return{"message":"hello"}只是返回JSON，现在return 
+FileResponse("static/index.html")浏览器收到HTML后会渲染网页（网页=HTML文件）
