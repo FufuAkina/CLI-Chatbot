@@ -18,17 +18,18 @@ def loading(stop_flag):
         time.sleep(0.1)
         
 class ChatEngine:
-    
-    def __init__(self):
-        
+
+    def __init__(self, load_history_file=False):
+
         self.messages = [
             {
                 "role": "system",
                 "content": "You are a helpful assistant."
             }
         ]
-        
-        self.messages.extend(load_history())
+
+        if load_history_file:
+            self.messages.extend(load_history())
         
     def chat_stream(self, user_input, max_retries=3):
     
@@ -130,5 +131,4 @@ class ChatEngine:
             
             result += f"{role}: \n{content} \n\n"
         
-        return result    
-    
+        return result

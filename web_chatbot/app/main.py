@@ -7,7 +7,7 @@ init(autoreset=True)
 
 import time
 
-engine = ChatEngine()
+engine = ChatEngine(load_history_file=True)
 cmd = CommandHandler(engine)
 
 def print_user(text):
