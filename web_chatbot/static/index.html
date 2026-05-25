@@ -24,9 +24,17 @@
         async function sendMessage() {
 
             const input = document.getElementById("messageInput")
-            const message = input.value
+            const message = input.value.trim()
 
-            if (!message) return
+            if (!message) {
+                alert("请输入消息")
+                return
+            }
+
+            if (message.length > 4000) {
+                alert("消息长度不能超过 4000 字符")
+                return
+            }
 
             input.value = ""
 
@@ -59,48 +67,96 @@
 
             chatBox.appendChild(aiMsg)
 
-            // =========================
-            // 3. 请求 stream（带 session_id）
-            // =========================
-            const requestBody = { message: message }
-            if (sessionId) {
-                requestBody.session_id = sessionId
-            }
+            try {
+                // =========================
+                // 3. 请求 stream（带 session_id）
+                // =========================
+                const requestBody = { message: message }
+                if (sessionId) {
+                    requestBody.session_id = sessionId
+                }
 
-            const response = await fetch("/chat", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(requestBody)
-            })
+                // 添加超时控制
+                const controller = new AbortController()
+                const timeoutId = setTimeout(() => controller.abort(), 60000)
 
-            const reader = response.body.getReader()
-            const decoder = new TextDecoder()
+                const response = await fetch("/chat", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(requestBody),
+                    signal: controller.signal
+                })
 
-            // =========================
-            // 4. streaming 写入
-            // =========================
-            let isFirstChunk = true
+                clearTimeout(timeoutId)
 
-            while (true) {
+                if (!response.ok) {
+                    throw new Error(`HTTP错误: ${response.status}`)
+                }
 
-                const { done, value } = await reader.read()
-                if (done) break
+                const reader = response.body.getReader()
+                const decoder = new TextDecoder()
 
-                const chunk = decoder.decode(value)
+                // =========================
+                // 4. streaming 写入
+                // =========================
+                let isFirstChunk = true
+                let hasReceivedData = false
+                let lastChunkTime = Date.now()
 
-                // 第一个 chunk 可能包含 SESSION_ID
-                if (isFirstChunk && chunk.startsWith("SESSION_ID:")) {
-                    const lines = chunk.split("\n")
-                    sessionId = lines[0].replace("SESSION_ID:", "")
-                    // 剩余内容作为 AI 回复
-                    if (lines.length > 1) {
-                        aiSpan.textContent += lines.slice(1).join("\n")
+                const streamTimeout = setInterval(() => {
+                    if (hasReceivedData && Date.now() - lastChunkTime > 30000) {
+                        clearInterval(streamTimeout)
+                        reader.cancel()
+                        if (!aiSpan.textContent) {
+                            aiSpan.style.color = "red"
+                            aiSpan.textContent = "连接超时，请检查网络"
+                        }
                     }
-                    isFirstChunk = false
+                }, 5000)
+
+                while (true) {
+
+                    const { done, value } = await reader.read()
+                    if (done) {
+                        clearInterval(streamTimeout)
+                        break
+                    }
+
+                    hasReceivedData = true
+                    lastChunkTime = Date.now()
+
+                    const chunk = decoder.decode(value)
+
+                    // 检查是否是错误消息
+                    if (chunk.startsWith("ERROR:")) {
+                        clearInterval(streamTimeout)
+                        aiSpan.style.color = "red"
+                        aiSpan.textContent = chunk.replace("ERROR:", "")
+                        break
+                    }
+
+                    // 第一个 chunk 可能包含 SESSION_ID
+                    if (isFirstChunk && chunk.startsWith("SESSION_ID:")) {
+                        const lines = chunk.split("\n")
+                        sessionId = lines[0].replace("SESSION_ID:", "")
+                        // 剩余内容作为 AI 回复
+                        if (lines.length > 1) {
+                            aiSpan.textContent += lines.slice(1).join("\n")
+                        }
+                        isFirstChunk = false
+                    } else {
+                        aiSpan.textContent += chunk
+                    }
+                }
+
+            } catch (error) {
+                aiSpan.style.color = "red"
+                if (error.name === 'AbortError') {
+                    aiSpan.textContent = "请求超时，请检查网络连接"
                 } else {
-                    aiSpan.textContent += chunk
+                    aiSpan.textContent = `网络错误: ${error.message}`
                 }
             }
         }

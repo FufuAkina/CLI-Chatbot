@@ -1,5 +1,5 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, field_validator
 from fastapi.responses import FileResponse
 from fastapi.responses import StreamingResponse
 from typing import Optional
@@ -14,6 +14,7 @@ sessions = {}
 session_last_active = {}
 
 MAX_SESSION_AGE = 3600
+MAX_MESSAGE_LENGTH = 4000
 
 def cleanup_old_sessions():
     current_time = time.time()
@@ -28,6 +29,15 @@ def cleanup_old_sessions():
 class ChatRequest(BaseModel):
     message: str
     session_id: Optional[str] = None
+
+    @field_validator('message')
+    @classmethod
+    def validate_message(cls, v):
+        if not v or not v.strip():
+            raise ValueError('消息不能为空')
+        if len(v) > MAX_MESSAGE_LENGTH:
+            raise ValueError(f'消息长度不能超过 {MAX_MESSAGE_LENGTH} 字符')
+        return v.strip()
 
 class SessionResponse(BaseModel):
     session_id: str
@@ -58,9 +68,20 @@ def chat(req: ChatRequest):
     engine = sessions[session_id]
 
     def generate():
-        yield f"SESSION_ID:{session_id}\n"
-        for chunk in engine.chat_stream(req.message):
-            if chunk:
-                yield chunk
+        try:
+            yield f"SESSION_ID:{session_id}\n"
+
+            stream_result = engine.chat_stream(req.message)
+
+            if stream_result is None:
+                yield "ERROR:API调用失败，请稍后重试"
+                return
+
+            for chunk in stream_result:
+                if chunk:
+                    yield chunk
+
+        except Exception as e:
+            yield f"ERROR:发生错误: {str(e)}"
 
     return StreamingResponse(generate(), media_type="text/plain")

@@ -19,7 +19,7 @@ def loading(stop_flag):
         
 class ChatEngine:
 
-    def __init__(self, load_history_file=False):
+    def __init__(self, load_history_file=False, show_loading=False):
 
         self.messages = [
             {
@@ -30,77 +30,86 @@ class ChatEngine:
 
         if load_history_file:
             self.messages.extend(load_history())
-        
+
+        self.show_loading = show_loading
+
     def chat_stream(self, user_input, max_retries=3):
-    
+
         if not user_input.strip():
             return None
-        
+
         self.messages.append({
             "role": "user",
             "content": user_input
         })
-        
+
         ai_reply = ""
-        
-        # 在调用API之前:loading animation
+
+        # 在调用API之前:loading animation (仅CLI模式)
         stop_flag = {"stop": False}
-        
-        t = threading.Thread(
-            target=loading,
-            args=(stop_flag,)
-        )
-        t.start()
-        
+        t = None
+
+        if self.show_loading:
+            t = threading.Thread(
+                target=loading,
+                args=(stop_flag,)
+            )
+            t.start()
+
         for attempt in range(max_retries):
-            
+
             try:
-                
+
                 stream = client.chat.completions.create(
                     model = MODEL_NAME,
                     messages = self.messages,
                     stream = True,
                     timeout = 30
                 )
-                
+
                 # 一旦进入stream， 就停止loading
-                stop_flag["stop"] = True
-                t.join()
-                print("\r", end="")
-            
+                if self.show_loading:
+                    stop_flag["stop"] = True
+                    t.join()
+                    print("\r", end="")
+
                 for chunk in stream:
                     try:
                         delta = chunk.choices[0].delta.content
                         if delta:
                             ai_reply += delta
                             yield delta
-                            
+
                     except Exception:
                         continue
-                    
+
                 # 跳出retry
                 break
-            
+
             except openai.RateLimitError:
-                wait_time = 2 ** attempt  # 指数退避
-                print(f"\n[Ratelimit] 等待 {wait_time}s 后重试…")
-                time.sleep(wait_time)    #暂停几秒
-                
+                wait_time = 2 ** attempt
+                if self.show_loading:
+                    print(f"\n[Ratelimit] 等待 {wait_time}s 后重试…")
+                time.sleep(wait_time)
+
             except openai.APITimeoutError:
-                print("\n[Timeout] 请求超时， 重试中…") 
-                
+                if self.show_loading:
+                    print("\n[Timeout] 请求超时， 重试中…")
+
             except openai.APIConnectionError:
-                print("\n[Network] 网络错误，重试中…")  
-                
+                if self.show_loading:
+                    print("\n[Network] 网络错误，重试中…")
+
             except Exception as e:
-                print(f"\n[Unknown Error] {e}")
-                
+                if self.show_loading:
+                    print(f"\n[Unknown Error] {e}")
+
                 # 回滚user message(防止污染)
                 if self.messages and self.messages[-1]["role" ] == "user" :
                     self.messages.pop()
-                    
-                return None                    
-            
+
+                return None
+
             finally:
                 if len(ai_reply.strip()) > 0:
                     self.messages.append(
