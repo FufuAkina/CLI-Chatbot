@@ -10,3 +10,5 @@ BASE_URL = "https://api.deepseek.com"
 MODEL_NAME = "deepseek-chat"
 
 HISTORY_FILE = "data/chat_history.json"
+
+DEFAULT_SYSTEM_PROMPT = os.getenv("SYSTEM_PROMPT", "You are a helpful assistant.")

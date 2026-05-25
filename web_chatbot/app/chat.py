@@ -1,6 +1,6 @@
 from app.client import client
 from app.storage import load_history
-from app.config import MODEL_NAME
+from app.config import MODEL_NAME, DEFAULT_SYSTEM_PROMPT
 
 import openai
 import time
@@ -19,12 +19,14 @@ def loading(stop_flag):
         
 class ChatEngine:
 
-    def __init__(self, load_history_file=False, show_loading=False):
+    def __init__(self, load_history_file=False, show_loading=False, system_prompt=None):
+
+        self.system_prompt = system_prompt or DEFAULT_SYSTEM_PROMPT
 
         self.messages = [
             {
                 "role": "system",
-                "content": "You are a helpful assistant."
+                "content": self.system_prompt
             }
         ]
 
@@ -126,7 +128,7 @@ class ChatEngine:
         self.messages = [
             {
                 "role":"system",
-                "content": "You are a helpful assistant."
+                "content": self.system_prompt
             }
         ]
         

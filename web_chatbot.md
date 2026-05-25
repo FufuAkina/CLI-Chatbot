@@ -361,17 +361,31 @@ V4 改进升级：
 前端index.html: 请求steam中,如果没有回复，则HTTP请求错误；streaming写入时，如果有错误信息，将错误信息标红(标注后端中返回的错误)， 最后catch显示错误。
 ③移除了chat.py中show_loading的加载界面：只有运行CLI时候才显示，在Web运行时不显示
 ④添加输入验证：
-后端main.py:(字段验证器)， 自动检查是否合法
+后端main.py:(字段验证器)， 自动检查是否合法(是否为空，长度是否合法)
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, field_validator
 新导入HTTPException和field_validator这两个库
 在定义信息请求格式的时候class ChatRequest加上验证
+！！！validator不只检查还会修改数据，最后要保持原数据所以要return v.strip()
+前端index.html: 在asynv function sendMessage中一样加入验证消息是否为空和消息的长度
+⑤e.g.断网提示：在前端加入超时处理
 
-
-
-
-
-
+第二阶段：改进用户体验
+改进前端UI: CSS样式、自动滚动、Enter键发送、清空对话按钮；添加CORS支持-支持跨域部署； 可配置的SystemPrompt   
+定义AI角色
+①前端的优化UI: 现代CSS样式
+给前端<head>配置现代的CSS样式，更新<script>部分，适配新的样式并添加新的功能
+②添加CORS支持：跨域资源共享(同源必须包括：协议，域名，端口) = Same Origin
+比如http://localhost:3000 与http://localhost:8000 都是localhost，但是接口不同就不同源
+main.py： from fastapi.middleware.cors import CORSMiddleware 导入FastAPI提供的CORS中间件(概念)
+app.add_middleware 给FastAPI添加一个中间件
+{  CORSMiddleware           内置的跨域处理中间件(自动添加HTTP Header， 相应Options相应，告诉浏览器允许跨域)
+然后定义允许的域名、身份信息、方式以及请求头
+}
+(※)③可配置的system prompt：
+修改ChatEngine逻辑：首先默认的system prompt放在config文件中，在ChatEngine的初始化中允许自定义prompt或者使用默认，reset功能中也要记得修改
+在.env(环境变量文件)中配置：改变AI的行为->只能改代码和重启服务 (×)     通过在.env中做配置化工作：config.py中DEFAULT_SYSTEM_PROMPT = os.getenv ("SYSTEM_PROMPT", "You are a helpful assistant.")
+配置驱动系统工作：将AI的system prompt从原来的代码中放进了.env中，成为了可配置的
 
 
 
