@@ -352,7 +352,20 @@ Web 版本：
 
 1 小时不活跃自动清理
 
-
+V4 改进升级：
+第一阶段：安全与稳定性
+添加.gitignore, Web错误处理，移除Web中的CLI loading动画，添加输入验证
+操作：①.gitignore保护环境变量和敏感信息.env , .env.loacl
+②为Web添加错误处理:
+后端main.py: chat/中调用DEEPSEEK API是否成功加一个try
+前端index.html: 请求steam中,如果没有回复，则HTTP请求错误；streaming写入时，如果有错误信息，将错误信息标红(标注后端中返回的错误)， 最后catch显示错误。
+③移除了chat.py中show_loading的加载界面：只有运行CLI时候才显示，在Web运行时不显示
+④添加输入验证：
+后端main.py:(字段验证器)， 自动检查是否合法
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, field_validator
+新导入HTTPException和field_validator这两个库
+在定义信息请求格式的时候class ChatRequest加上验证
 
 
 
