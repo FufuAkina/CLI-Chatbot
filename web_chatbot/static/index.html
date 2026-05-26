@@ -43,6 +43,71 @@
             font-weight: 600;
         }
 
+        .role-selector {
+            padding: 15px 20px;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            flex-wrap: wrap;
+        }
+
+        .role-btn {
+            padding: 8px 15px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .role-btn:hover {
+            border-color: #667eea;
+            background: #f0f0ff;
+        }
+
+        .role-btn.active {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .custom-prompt-area {
+            padding: 15px 20px;
+            background: #f9f9f9;
+            border-bottom: 1px solid #e0e0e0;
+            display: none;
+        }
+
+        .custom-prompt-area.show {
+            display: block;
+        }
+
+        .custom-prompt-area textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 80px;
+            font-family: inherit;
+        }
+
+        .custom-prompt-area textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .custom-prompt-area button {
+            margin-top: 10px;
+            padding: 8px 20px;
+            font-size: 14px;
+        }
+
         #chatBox {
             flex: 1;
             overflow-y: auto;
@@ -184,6 +249,15 @@
             🤖 AI Chatbot
         </div>
 
+        <div class="role-selector" id="roleSelector">
+            <!-- 角色按钮将通过 JavaScript 动态加载 -->
+        </div>
+
+        <div class="custom-prompt-area" id="customPromptArea">
+            <textarea id="customPromptInput" placeholder="输入自定义 System Prompt，例如：你是一个专业的法律顾问..."></textarea>
+            <button onclick="applyCustomPrompt()">应用自定义角色</button>
+        </div>
+
         <div id="chatBox"></div>
 
         <div class="input-area">
@@ -196,6 +270,90 @@
     <script>
 
         let sessionId = null
+        let currentRole = "default"
+        let customPrompt = null
+
+        // 加载角色列表
+        async function loadRoles() {
+            try {
+                const response = await fetch("/roles")
+                const data = await response.json()
+                const roleSelector = document.getElementById("roleSelector")
+
+                data.roles.forEach(role => {
+                    const btn = document.createElement("button")
+                    btn.className = "role-btn"
+                    btn.textContent = `${role.icon} ${role.name}`
+                    btn.title = role.description
+                    btn.onclick = () => selectRole(role.key, btn)
+
+                    if (role.key === "default") {
+                        btn.classList.add("active")
+                    }
+
+                    roleSelector.appendChild(btn)
+                })
+
+                // 添加自定义角色按钮
+                const customBtn = document.createElement("button")
+                customBtn.className = "role-btn"
+                customBtn.textContent = "⚙️ 自定义"
+                customBtn.title = "输入自定义 System Prompt"
+                customBtn.onclick = () => toggleCustomPrompt(customBtn)
+                roleSelector.appendChild(customBtn)
+
+            } catch (error) {
+                console.error("加载角色失败:", error)
+            }
+        }
+
+        // 切换自定义 Prompt 区域
+        function toggleCustomPrompt(btnElement) {
+            const customArea = document.getElementById("customPromptArea")
+            customArea.classList.toggle("show")
+
+            if (customArea.classList.contains("show")) {
+                document.getElementById("customPromptInput").focus()
+            }
+        }
+
+        // 应用自定义 Prompt
+        function applyCustomPrompt() {
+            const input = document.getElementById("customPromptInput")
+            const prompt = input.value.trim()
+
+            if (!prompt) {
+                alert("请输入 System Prompt")
+                return
+            }
+
+            customPrompt = prompt
+            currentRole = "custom"
+            sessionId = null
+
+            document.querySelectorAll(".role-btn").forEach(btn => {
+                btn.classList.remove("active")
+            })
+            document.querySelector(".role-btn:last-child").classList.add("active")
+
+            document.getElementById("customPromptArea").classList.remove("show")
+            document.getElementById("chatBox").innerHTML = ""
+
+            alert("自定义角色已应用！")
+        }
+
+        // 选择角色
+        function selectRole(roleKey, btnElement) {
+            currentRole = roleKey
+            sessionId = null
+
+            document.querySelectorAll(".role-btn").forEach(btn => {
+                btn.classList.remove("active")
+            })
+            btnElement.classList.add("active")
+
+            document.getElementById("chatBox").innerHTML = ""
+        }
 
         // 自动滚动到底部
         function scrollToBottom() {
@@ -213,6 +371,8 @@
 
         // Enter 键发送
         document.addEventListener('DOMContentLoaded', function() {
+            loadRoles()
+
             const input = document.getElementById("messageInput")
             input.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
@@ -283,6 +443,12 @@
                 const requestBody = { message: message }
                 if (sessionId) {
                     requestBody.session_id = sessionId
+                }
+                requestBody.role = currentRole
+
+                // 如果是自定义角色，发送自定义 prompt
+                if (currentRole === "custom" && customPrompt) {
+                    requestBody.custom_prompt = customPrompt
                 }
 
                 // 添加超时控制

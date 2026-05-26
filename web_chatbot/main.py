@@ -9,6 +9,7 @@ import time
 
 from app.chat import ChatEngine
 from app.logger import logger
+from app.prompts import get_prompt_template, list_all_templates
 import uuid
 
 @asynccontextmanager
@@ -67,6 +68,8 @@ def cleanup_old_sessions():
 class ChatRequest(BaseModel):
     message: str
     session_id: Optional[str] = None
+    role: Optional[str] = None
+    custom_prompt: Optional[str] = None
 
     @field_validator('message')
     @classmethod
@@ -84,6 +87,11 @@ class SessionResponse(BaseModel):
 def home():
     return FileResponse("static/index.html")
 
+@app.get("/roles")
+def get_roles():
+    """获取所有可用的角色模板"""
+    return {"roles": list_all_templates()}
+
 @app.post("/session")
 def create_session():
     session_id = str(uuid.uuid4())
@@ -95,10 +103,20 @@ def chat(req: ChatRequest):
 
     cleanup_old_sessions()
 
+    # 获取 system prompt（优先使用自定义 prompt）
+    if req.custom_prompt:
+        system_prompt = req.custom_prompt
+        role_name = "自定义角色"
+    else:
+        role_key = req.role or "default"
+        template = get_prompt_template(role_key)
+        system_prompt = template["system_prompt"]
+        role_name = template["name"]
+
     if not req.session_id or req.session_id not in sessions:
         session_id = str(uuid.uuid4())
-        sessions[session_id] = ChatEngine()
-        logger.info(f"创建新会话: {session_id}")
+        sessions[session_id] = ChatEngine(system_prompt=system_prompt)
+        logger.info(f"创建新会话: {session_id}, 角色: {role_name}")
     else:
         session_id = req.session_id
 
