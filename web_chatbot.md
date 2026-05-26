@@ -387,6 +387,30 @@ app.add_middleware 给FastAPI添加一个中间件
 在.env(环境变量文件)中配置：改变AI的行为->只能改代码和重启服务 (×)     通过在.env中做配置化工作：config.py中DEFAULT_SYSTEM_PROMPT = os.getenv ("SYSTEM_PROMPT", "You are a helpful assistant.")
 配置驱动系统工作：将AI的system prompt从原来的代码中放进了.env中，成为了可配置的
 
+第三阶段：生产就绪： 会话持久化-使用Redis或数据库存储会话；日志系统-记录用户行为、错误、性能； 性能监控-追踪API调用时间、token消耗； 单元测试-确保代码质量； 部署优化-Docker、环境配置、生产环境配置
+1.添加日志系统：先创建日志配置logger.py,；在主程序main.py中导入logger，并添加相应的日志记录logger.info，将logger添加到/chat端点；在主程序main.py中添加启动和关闭事件的日志from contextlib importasynccontextmanager  
+创建一个异步函数，定义了lifespan
+2.添加性能监控from fastapi import Requesst(统计每个请求耗时、记录慢请求、输出日志、把耗时写进响应头)，每个http请求进入FastAPI时，先进入中间件这个函数
+3.创建requirements.txt:写入
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+pydantic==2.9.0
+python-dotenv==1.0.1
+openai==1.54.0
+colorama==0.4.6
+4.添加环境配置示例：.env.example
+# DeepSeek API 配置
+DEEPSEEK_API_KEY=your_api_key_here
+
+# 可选：自定义 System Prompt
+# SYSTEM_PROMPT=You are a helpful assistant.
+
+# 可选：自定义 System Prompt 示例
+# SYSTEM_PROMPT=你是一个专业的 Python 编程助手，擅长 Web 开发和数据分析。
+# SYSTEM_PROMPT=You are a creative writing assistant who helps with storytelling.
+5.创建项目文档：Readme.md
+
+
 
 
 
